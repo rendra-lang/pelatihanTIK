@@ -1,33 +1,3 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pengatur Keuangan Harian</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <main class="container">
-    <header>
-      <h1>Pengatur Keuangan Harian</h1>
-      <p class="tagline">Catat pemasukan & pengeluaran — tersimpan di browser</p>
-    </header>
-
-    <section class="summary" aria-live="polite">
-      <div class="card">
-        <h3>Saldo</h3>
-        <p id="balance">Rp 0</p>
-      </div>
-      <div class="card">
-        <h3>Total Pemasukan</h3>
-        <p id="total-income">Rp 0</p>
-      </div>
-      <div class="card">
-        <h3>Total Pengeluaran</h3>
-        <p id="total-expense">Rp 0</p>
-      </div>
-    </section>
-
     <section class="controls">
       <form id="tx-form" class="form">
         <div class="row">
@@ -64,23 +34,32 @@
         </div>
       </form>
 
+      <!-- FILTER BARU (SUDAH DITENGAHKAN) -->
       <div class="filters">
-        <label for="filter-from">Dari</label>
-        <input id="filter-from" type="date" />
-        <label for="filter-to">Sampai</label>
-        <input id="filter-to" type="date" />
-        <button id="apply-filter" type="button">Terapkan</button>
-        <button id="clear-filter" type="button">Hapus Filter</button>
-      </div>
+        <div class="filter-row">
+          <label for="filter-from">Dari</label>
+          <input id="filter-from" type="date" />
 
-      <div class="export">
-        <button id="export-csv" type="button">Ekspor CSV</button>
-        <button id="clear-all" type="button" title="Hapus semua transaksi">Hapus Semua</button>
+          <label for="filter-to">Sampai</label>
+          <input id="filter-to" type="date" />
+        </div>
+
+        <div class="filter-actions">
+          <button id="apply-filter" type="button">Terapkan</button>
+          <button id="clear-filter" type="button">Hapus Filter</button>
+        </div>
       </div>
     </section>
 
+    <!-- EXPORT DIPINDAH KE KANAN -->
     <section class="list">
+      <div class="export-right">
+        <button id="export-csv" type="button">Ekspor CSV</button>
+        <button id="clear-all" type="button">Hapus Semua</button>
+      </div>
+
       <h2>Daftar Transaksi</h2>
+
       <table id="tx-table" aria-label="Daftar transaksi">
         <thead>
           <tr>
@@ -94,14 +73,6 @@
         </thead>
         <tbody></tbody>
       </table>
+
       <p id="no-data" class="muted">Belum ada transaksi.</p>
     </section>
-
-    <footer>
-      <small>Versi sederhana • Simpan lokal di browser • Buat oleh Web Developer</small>
-    </footer>
-  </main>
-
-  <script src="app.js"></script>
-</body>
-</html>
