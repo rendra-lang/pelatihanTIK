@@ -1,78 +1,79 @@
-    <section class="controls">
-      <form id="tx-form" class="form">
-        <div class="row">
-          <label for="type">Tipe</label>
-          <select id="type" required>
-            <option value="income">Pemasukan</option>
-            <option value="expense">Pengeluaran</option>
-          </select>
-        </div>
+<section class="controls">
+  <form id="tx-form" class="form">
+    <div class="row">
+      <label for="type">Tipe</label>
+      <select id="type" required>
+        <option value="income">Pemasukan</option>
+        <option value="expense">Pengeluaran</option>
+      </select>
+    </div>
 
-        <div class="row">
-          <label for="amount">Jumlah (Rp)</label>
-          <input id="amount" type="number" min="0" step="1" placeholder="Contoh: 50000" required />
-        </div>
+    <div class="row">
+      <label for="amount">Jumlah (Rp)</label>
+      <input id="amount" type="number" min="0" step="1" placeholder="Contoh: 50000" required />
+    </div>
 
-        <div class="row">
-          <label for="category">Kategori</label>
-          <input id="category" type="text" placeholder="Contoh: Gaji, Makan, Transport" />
-        </div>
+    <div class="row">
+      <label for="category">Kategori</label>
+      <input id="category" type="text" placeholder="Contoh: Gaji, Makan, Transport" />
+    </div>
 
-        <div class="row">
-          <label for="note">Catatan</label>
-          <input id="note" type="text" placeholder="Opsional" />
-        </div>
+    <div class="row">
+      <label for="note">Catatan</label>
+      <input id="note" type="text" placeholder="Opsional" />
+    </div>
 
-        <div class="row">
-          <label for="date">Tanggal</label>
-          <input id="date" type="date" required />
-        </div>
+    <div class="row">
+      <label for="date">Tanggal</label>
+      <input id="date" type="date" required />
+    </div>
 
-        <div class="row actions">
-          <button type="submit" id="add-btn">Tambah</button>
-          <button type="button" id="clear-form">Reset</button>
-        </div>
-      </form>
+    <div class="row actions">
+      <button type="submit" id="add-btn">Tambah</button>
+      <button type="button" id="clear-form">Reset</button>
+    </div>
+  </form>
 
-      <!-- FILTER BARU (SUDAH DITENGAHKAN) -->
-      <div class="filters">
-        <div class="filter-row">
-          <label for="filter-from">Dari</label>
-          <input id="filter-from" type="date" />
+  <!-- FILTER YANG SUDAH DIPINDAH KE TENGAH -->
+  <div class="filters">
+    <div class="filter-row">
+      <label for="filter-from">Dari</label>
+      <input id="filter-from" type="date" />
 
-          <label for="filter-to">Sampai</label>
-          <input id="filter-to" type="date" />
-        </div>
+      <label for="filter-to">Sampai</label>
+      <input id="filter-to" type="date" />
+    </div>
 
-        <div class="filter-actions">
-          <button id="apply-filter" type="button">Terapkan</button>
-          <button id="clear-filter" type="button">Hapus Filter</button>
-        </div>
-      </div>
-    </section>
+    <div class="filter-actions">
+      <button id="apply-filter" type="button">Terapkan</button>
+      <button id="clear-filter" type="button">Hapus Filter</button>
+    </div>
+  </div>
+</section>
 
-    <!-- EXPORT DIPINDAH KE KANAN -->
-    <section class="list">
-      <div class="export-right">
-        <button id="export-csv" type="button">Ekspor CSV</button>
-        <button id="clear-all" type="button">Hapus Semua</button>
-      </div>
+<!-- EXPORT DIPINDAH KE KANAN ATAS LIST -->
+<section class="list">
 
-      <h2>Daftar Transaksi</h2>
+  <div class="export-right">
+    <button id="export-csv" type="button">Ekspor CSV</button>
+    <button id="clear-all" type="button">Hapus Semua</button>
+  </div>
 
-      <table id="tx-table" aria-label="Daftar transaksi">
-        <thead>
-          <tr>
-            <th>Tanggal</th>
-            <th>Tipe</th>
-            <th>Jumlah (Rp)</th>
-            <th>Kategori</th>
-            <th>Catatan</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+  <h2>Daftar Transaksi</h2>
 
-      <p id="no-data" class="muted">Belum ada transaksi.</p>
-    </section>
+  <table id="tx-table" aria-label="Daftar transaksi">
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Tipe</th>
+        <th>Jumlah (Rp)</th>
+        <th>Kategori</th>
+        <th>Catatan</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p id="no-data" class="muted">Belum ada transaksi.</p>
+</section>
