@@ -1,146 +1,277 @@
-:root{
-  --bg: #f6f8fb;
-  --card: #ffffff;
-  --accent: #2563eb;
-  --danger: #ef4444;
-  --muted: #6b7280;
-  --glass: rgba(255,255,255,0.7);
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+// app.js - Pengatur Keuangan Harian (tanpa dependensi eksternal)
+
+// Helper: format angka ke Rupiah sederhana
+function formatRupiah(n){
+  const num = Number(n) || 0;
+  return 'Rp ' + num.toLocaleString('id-ID');
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  background: linear-gradient(180deg,#eef2ff 0%, var(--bg) 100%);
-  color:#111827;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  padding:24px;
+// State dan key localStorage
+const STORAGE_KEY = 'simple_finance_tx_v1';
+let transactions = [];
+
+// Elemen UI
+const balanceEl = document.getElementById('balance');
+const totalIncomeEl = document.getElementById('total-income');
+const totalExpenseEl = document.getElementById('total-expense');
+const txTableBody = document.querySelector('#tx-table tbody');
+const noDataEl = document.getElementById('no-data');
+
+const form = document.getElementById('tx-form');
+const typeInput = document.getElementById('type');
+const amountInput = document.getElementById('amount');
+const categoryInput = document.getElementById('category');
+const noteInput = document.getElementById('note');
+const dateInput = document.getElementById('date');
+const addBtn = document.getElementById('add-btn');
+
+const filterFrom = document.getElementById('filter-from');
+const filterTo = document.getElementById('filter-to');
+const applyFilterBtn = document.getElementById('apply-filter');
+const clearFilterBtn = document.getElementById('clear-filter');
+
+const exportCsvBtn = document.getElementById('export-csv');
+const clearAllBtn = document.getElementById('clear-all');
+const clearFormBtn = document.getElementById('clear-form');
+
+// Inisialisasi tanggal default ke hari ini
+(function initDate(){
+  const today = new Date().toISOString().slice(0,10);
+  dateInput.value = today;
+})();
+
+// Load dari localStorage
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    transactions = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    console.error('Gagal membaca storage', e);
+    transactions = [];
+  }
 }
 
-.container{
-  max-width:980px;
-  margin:0 auto;
+// Simpan ke localStorage
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
 }
 
-header{ text-align:center; margin-bottom:18px }
-h1{margin:0; font-size:1.6rem}
-.tagline{margin:6px 0 0; color:var(--muted)}
-
-.summary{
-  display:flex;
-  gap:12px;
-  margin:16px 0;
-  flex-wrap:wrap;
-}
-.card{
-  background:var(--card);
-  flex:1 1 30%;
-  padding:14px;
-  border-radius:10px;
-  box-shadow:0 6px 18px rgba(15,23,42,0.06);
-  min-width:180px;
-}
-.card h3{margin:0 0 6px; font-size:0.9rem; color:var(--muted)}
-.card p{font-size:1.1rem; margin:0; font-weight:700}
-
-.controls{
-  display:flex;
-  gap:18px;
-  align-items:flex-start;
-  flex-wrap:wrap;
-  margin-bottom:18px;
+function computeTotals(list){
+  // hitung total pemasukan dan pengeluaran (integer arithmetic via Number)
+  let income = 0;
+  let expense = 0;
+  for (const t of list){
+    const amt = Number(t.amount) || 0;
+    if (t.type === 'income') income += amt;
+    else expense += amt;
+  }
+  const balance = income - expense;
+  return { income, expense, balance };
 }
 
-.form{
-  background:var(--card);
-  padding:12px;
-  border-radius:10px;
-  box-shadow:0 6px 18px rgba(15,23,42,0.06);
-  flex:1 1 420px;
-  min-width:260px;
+// Render ringkasan dan tabel
+function render(list = transactions){
+  // Tampilkan ringkasan
+  const totals = computeTotals(list);
+  balanceEl.textContent = formatRupiah(totals.balance);
+  totalIncomeEl.textContent = formatRupiah(totals.income);
+  totalExpenseEl.textContent = formatRupiah(totals.expense);
+
+  // Tabel
+  txTableBody.innerHTML = '';
+  if (!list || list.length === 0){
+    noDataEl.style.display = 'block';
+    return;
+  } else {
+    noDataEl.style.display = 'none';
+  }
+
+  // Urut turun berdasarkan tanggal (newest first), jika sama urut berdasarkan id
+  const sorted = [...list].sort((a,b)=>{
+    if (a.date === b.date) return b.id - a.id;
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  for (const tx of sorted){
+    const tr = document.createElement('tr');
+
+    const tdDate = document.createElement('td');
+    tdDate.textContent = tx.date;
+    tr.appendChild(tdDate);
+
+    const tdType = document.createElement('td');
+    tdType.textContent = tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+    tdType.className = tx.type === 'income' ? 'tx-income' : 'tx-expense';
+    tr.appendChild(tdType);
+
+    const tdAmt = document.createElement('td');
+    tdAmt.textContent = formatRupiah(tx.amount);
+    tr.appendChild(tdAmt);
+
+    const tdCat = document.createElement('td');
+    tdCat.textContent = tx.category || '-';
+    tr.appendChild(tdCat);
+
+    const tdNote = document.createElement('td');
+    tdNote.textContent = tx.note || '-';
+    tr.appendChild(tdNote);
+
+    const tdAct = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'small-btn danger';
+    delBtn.textContent = 'Hapus';
+    delBtn.addEventListener('click', ()=> {
+      if (confirm('Hapus transaksi ini?')) {
+        removeTransaction(tx.id);
+      }
+    });
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'small-btn';
+    editBtn.style.marginRight = '6px';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', ()=> {
+      // simple edit: isi form dengan data transaksi, lalu hapus transaksi lama
+      typeInput.value = tx.type;
+      amountInput.value = tx.amount;
+      categoryInput.value = tx.category;
+      noteInput.value = tx.note;
+      dateInput.value = tx.date;
+      // fokuskan amount
+      amountInput.focus();
+      // hapus item lama supaya on submit akan menambah versi baru (edit)
+      removeTransaction(tx.id, false); // simpan setelah delete
+      render();
+    });
+
+    tdAct.appendChild(editBtn);
+    tdAct.appendChild(delBtn);
+    tr.appendChild(tdAct);
+
+    txTableBody.appendChild(tr);
+  }
 }
 
-.row{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  margin-bottom:10px;
-}
-.row label{font-size:0.85rem; color:var(--muted)}
-.row input[type="text"],
-.row input[type="date"],
-.row input[type="number"],
-.row select{
-  padding:8px 10px;
-  border-radius:8px;
-  border:1px solid #e6e9ef;
-  outline:none;
-  font-size:0.95rem;
-  background:transparent;
-}
-.row input[type="number"]::-webkit-outer-spin-button,
-.row input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
-
-.actions{ display:flex; gap:8px; justify-content:flex-end }
-button{
-  padding:8px 12px;
-  border-radius:8px;
-  border: none;
-  cursor:pointer;
-  background:var(--accent);
-  color:white;
-  font-weight:600;
-}
-button[title]{ background:var(--danger) }
-
-.filters{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  background:var(--card);
-  padding:10px;
-  border-radius:10px;
-  min-width:260px;
-  box-shadow:0 6px 18px rgba(15,23,42,0.04);
+// Tambah transaksi
+function addTransaction({ type, amount, category, note, date }){
+  // Validasi sederhana
+  const amt = Number(amount);
+  if (!date || !amount || isNaN(amt) || amt <= 0) {
+    alert('Isi tanggal dan jumlah yang valid (lebih dari 0).');
+    return false;
+  }
+  const id = Date.now(); // unik cukup untuk aplikasi lokal
+  const tx = { id, type, amount: Math.round(amt), category, note, date };
+  transactions.push(tx);
+  save();
+  render();
+  return true;
 }
 
-.export{ display:flex; gap:8px; align-items:center }
-
-.list{
-  margin-top:12px;
-  background:var(--card);
-  padding:12px;
-  border-radius:10px;
-  box-shadow:0 6px 18px rgba(15,23,42,0.06);
+// Hapus transaksi by id
+function removeTransaction(id, saveAfter = true){
+  transactions = transactions.filter(t => t.id !== id);
+  if (saveAfter) save();
+  render();
 }
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:0.95rem;
-}
-th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid #f1f5f9 }
-th{ color:var(--muted); font-weight:600; font-size:0.85rem }
-.muted{ color:var(--muted); margin:10px 0 0; }
-.tx-income{ color:green; font-weight:700 }
-.tx-expense{ color:var(--danger); font-weight:700 }
 
-.small-btn{
-  padding:6px 8px;
-  border-radius:6px;
-  font-size:0.85rem;
-  background:transparent;
-  border:1px solid #e6e9ef;
-  color:var(--muted);
-  cursor:pointer;
+// Filter berdasarkan tanggal (in-place, returns filtered array)
+function filterByDate(from, to){
+  let list = [...transactions];
+  if (from) {
+    const f = new Date(from);
+    list = list.filter(t => new Date(t.date) >= f);
+  }
+  if (to) {
+    const tDate = new Date(to);
+    // include to date (set time to end of day)
+    tDate.setHours(23,59,59,999);
+    list = list.filter(t => new Date(t.date) <= tDate);
+  }
+  return list;
 }
-.small-btn.danger{ border-color:#fca5a5; color:var(--danger) }
 
-footer{ text-align:center; margin-top:12px; color:var(--muted) }
+// Eksport CSV sederhana
+function exportCSV(list){
+  if (!list || list.length === 0) {
+    alert('Tidak ada data untuk diekspor.');
+    return;
+  }
+  const headers = ['id','date','type','amount','category','note'];
+  const rows = list.map(tx => headers.map(h => {
+    const val = tx[h] !== undefined && tx[h] !== null ? String(tx[h]) : '';
+    // escape double quotes
+    return `"${val.replace(/"/g,'""')}"`;
+  }).join(','));
 
-/* responsive */
-@media (max-width:720px){
-  .summary{flex-direction:column}
-  .controls{flex-direction:column}
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.download = `transactions-${ts}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
+
+// Clear all (with confirm)
+function clearAll(){
+  if (!confirm('Hapus semua transaksi? Tindakan ini tidak bisa dibatalkan.')) return;
+  transactions = [];
+  save();
+  render();
+}
+
+// Setup event listeners
+form.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const payload = {
+    type: typeInput.value,
+    amount: amountInput.value,
+    category: categoryInput.value.trim(),
+    note: noteInput.value.trim(),
+    date: dateInput.value
+  };
+  const ok = addTransaction(payload);
+  if (ok) {
+    form.reset();
+    // kembalikan tanggal ke hari ini
+    dateInput.value = new Date().toISOString().slice(0,10);
+  }
+});
+
+clearFormBtn.addEventListener('click', ()=> {
+  form.reset();
+  dateInput.value = new Date().toISOString().slice(0,10);
+});
+
+applyFilterBtn.addEventListener('click', ()=> {
+  const from = filterFrom.value || null;
+  const to = filterTo.value || null;
+  const filtered = filterByDate(from, to);
+  render(filtered);
+});
+
+clearFilterBtn.addEventListener('click', ()=> {
+  filterFrom.value = '';
+  filterTo.value = '';
+  render();
+});
+
+exportCsvBtn.addEventListener('click', ()=> {
+  // gunakan filter jika ada, else semua
+  const filtered = (filterFrom.value || filterTo.value) ? filterByDate(filterFrom.value, filterTo.value) : transactions;
+  exportCSV(filtered);
+});
+
+clearAllBtn.addEventListener('click', clearAll);
+
+// Simple init
+(function boot(){
+  load();
+  render();
+})();
